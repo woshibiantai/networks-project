@@ -85,14 +85,46 @@ def handleConnections(conn, data, addr):
             port = int((temp[(port_position+1)])[:webserver_position-port_position-1])
             webserver = temp[:port_position]
 
-        
+        forwardRequests(webserver, port, conn, data, addr)
+
 
 
     except Exception as err:
         print(err)
         pass
 
+def forwardRequests(webserver, port, conn, data, addr):
+    try:
+        forward_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        forward_socket.connect((webserver,port))
+        forward_socket.send(data)
 
+        while True:
+            # receive reply from end target (webserver)
+            reply = forward_socket.recv(buffersize)
 
+            if len(reply) > 0:
+                #Relay unfiltered message to the client
+                print("type: ",type(reply))
+                conn.send(reply)
+
+                #Notify Proxy Server about the status
+                status = float(len(reply))
+                status = float(status/1024)
+                status = "%.3s" % (str(status))
+                status = "%s KB" % (status)
+
+                print("Request done: %s => %s <= " % (str(addr[0]),str(status)))
+
+            else:
+                break
+        forward_socket.close()
+        conn.close()
+
+    except Exception as err:
+        print(err)
+        forward_socket.close()
+        conn.close()
+        sys.exit()
 
 initServer()
