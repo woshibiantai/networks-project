@@ -2,6 +2,7 @@
 
 import sys
 import socket
+import requests
 from _thread import *
 
 maximum_concurrent_connections = 5 # Maximum number of concurrent conncetions held by the server
@@ -102,10 +103,11 @@ def forwardRequests(webserver, port, conn, data, addr):
         while True:
             # receive reply from end target (webserver)
             reply = forward_socket.recv(buffersize)
+            print("reply: ", reply)
+
 
             if len(reply) > 0:
                 #Relay unfiltered message to the client
-                print("type: ",type(reply))
                 conn.send(reply)
 
                 #Notify Proxy Server about the status
