@@ -154,16 +154,18 @@ def modify_HTTP_response(reply, json_file):
     if("<!DOCTYPE html>" in reply):
         reply_list = re.split("(<!DOCTYPE html>)", reply)
 
-        print("reply list: ", reply_list)
+        # print("reply list: ", reply_list)
 
         for word in json_data["Wordlist"]:
             new_word = json_data["Wordlist"].get(word)
 
-            reply_list[1] = reply_list[1].replace(word, new_word)
+            reply_list[2] = reply_list[2].replace(word, new_word)
 
         reply = ' '.join(reply_list)
 
     else:
+
+        # print('reply else:', reply)
 
         for word in json_data["Wordlist"]:
             new_word = json_data["Wordlist"].get(word)
