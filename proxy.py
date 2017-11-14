@@ -1,8 +1,12 @@
 # A proxy server written for python 3.6
 
+import os
 import sys
 import socket
 import requests
+import json
+import re
+from pprint import pprint
 from _thread import *
 
 maximum_concurrent_connections = 5 # Maximum number of concurrent conncetions held by the server
@@ -103,12 +107,18 @@ def forwardRequests(webserver, port, conn, data, addr):
         while True:
             # receive reply from end target (webserver)
             reply = forward_socket.recv(buffersize)
-            print("reply: ", reply)
+            reply_as_string = str(reply,'utf-8')
 
+
+            reply_as_string = modify_HTTP_response(reply_as_string, "prefs.json")
+
+            print("reply: ", reply_as_string)
+
+            modified_reply = reply_as_string.encode('utf-8')
 
             if len(reply) > 0:
                 #Relay unfiltered message to the client
-                conn.send(reply)
+                conn.send(modified_reply)
 
                 #Notify Proxy Server about the status
                 status = float(len(reply))
@@ -116,7 +126,7 @@ def forwardRequests(webserver, port, conn, data, addr):
                 status = "%.3s" % (str(status))
                 status = "%s KB" % (status)
 
-                print("Request done: %s => %s <= " % (str(addr[0]),str(status)))
+                print("Request done and sent to: %s , size: %s " % (str(addr[0]),str(status)))
 
             else:
                 break
@@ -128,5 +138,40 @@ def forwardRequests(webserver, port, conn, data, addr):
         forward_socket.close()
         conn.close()
         sys.exit()
+
+def modify_HTTP_response(reply, json_file):
+    """
+    Modifies HTTP response String
+    :returns: response, as String
+    """
+
+    #Opens the json file and passes it in as a dictionary
+    main_path = os.path.dirname(__file__)
+    json_path = os.path.join(main_path, json_file)
+    json_open = open(json_path)
+    json_data = json.load(json_open)
+
+    if("<!DOCTYPE html>" in reply):
+        reply_list = re.split("(<!DOCTYPE html>)", reply)
+
+        print("reply list: ", reply_list)
+
+        for word in json_data["Wordlist"]:
+            new_word = json_data["Wordlist"].get(word)
+
+            reply_list[1] = reply_list[1].replace(word, new_word)
+
+        reply = ' '.join(reply_list)
+
+    else:
+
+        for word in json_data["Wordlist"]:
+            new_word = json_data["Wordlist"].get(word)
+
+            reply = reply.replace(word, new_word)
+
+
+    return reply
+
 
 initServer()
