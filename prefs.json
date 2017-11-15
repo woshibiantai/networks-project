@@ -7,7 +7,7 @@
   },
 
   "Blacklisted_sites" : {
-    "https://httpbin.org/headers":""
+    "http://httpbin.org/headers":""
   }
 
 

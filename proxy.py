@@ -4,15 +4,15 @@ import os
 import sys
 import socket
 import requests
-import json
 import re
-import ssl
+import json
+import time
 from pprint import pprint
 from _thread import *
 
 
 maximum_concurrent_connections = 5 # Maximum number of concurrent connections held by the server
-buffersize = 8192                  # Socket Buffer max size
+buffersize = 4096                  # Socket Buffer max size
 
 # Get the port number you wish to listen on, manually input by the user
 try:
@@ -58,42 +58,63 @@ def handleConnections(conn, data, addr):
     # Request from user (connected to Proxy) will be processed in this function
     try:
         # print(data
-        print("addr: ", addr)
         print("splitting...")
         site_data = data.decode("utf-8", "ignore").split('\n')[0]
-        print("site_data: ", site_data)
-        url = site_data.split(' ')[1]
-        print(url)
-        # Find the position of the ://
-        http_position = url.find("://")
 
-        print("http_position:", http_position)
-        if(http_position == -1):
-            temp = url
-        else:
-            print("entered else: ")
-            temp = url[(http_position+3):] #Get the URL without the HTTP:// bit
+        if("GET" in site_data):
+            print("site_data: ", site_data)
+            url = site_data.split(' ')[1]
+            print("url: ",url)
+            # Find the position of the ://
+            http_position = url.find("://")
 
-        port_position = temp.find(":") # Get the position of the Port, if any
+            print("http_position:", http_position)
+            if(http_position == -1):
+                temp = url
+            else:
+                temp = url[(http_position+3):] #Get the URL without the HTTP:// bit
 
-        webserver_position = temp.find("/") # Get the position of the webserver's end
+            port_position = temp.find(":") # Get the position of the Port, if any
 
-        if(webserver_position == -1):
-            webserver_position = len(temp)
+            webserver_position = temp.find("/") # Get the position of the webserver's end
 
-        webserver = ""
-        port = -1
+            if(webserver_position == -1):
+                webserver_position = len(temp)
 
-        if(port_position == -1 or webserver_position < port_position):
-            port = 80
-            webserver = temp[:webserver_position]
+            webserver = ""
+            port = -1
 
-        else:
-            #In the event that a specific port is used
-            port = int((temp[(port_position+1)])[:webserver_position-port_position-1])
-            webserver = temp[:port_position]
+            if(port_position == -1 or webserver_position < port_position):
+                port = 80
+                webserver = temp[:webserver_position]
 
-        forwardRequests(webserver, port, conn, data, addr)
+            else:
+                #In the event that a specific port is used
+                port = int((temp[(port_position+1)])[:webserver_position-port_position-1])
+                webserver = temp[:port_position]
+
+            # forwardRequests(webserver, port, conn, data, addr)
+            if check_websites_blacklist(url, "prefs.json"):
+
+
+
+                error_html = "<h1> Blacklisted Site </h1> <p> This site has been blocked for your own safety...</p>"
+
+                conn.send(error_html.encode('utf-8'))
+
+                pass
+
+            else:
+
+                r = requests.get(url,headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36'})
+
+                print(r.status_code)
+
+                reply_as_string = r.text
+
+                reply_as_string = modify_HTTP_response(reply_as_string, "prefs.json")
+
+                conn.send(reply_as_string.encode('utf-8'))
 
 
 
@@ -110,7 +131,6 @@ def forwardRequests(webserver, port, conn, data, addr):
         while True:
             # receive reply from end target (webserver)
             reply = forward_socket.recv(buffersize)
-
 
             try:
                 reply_as_string = str(reply,'utf-8')
@@ -136,14 +156,11 @@ def forwardRequests(webserver, port, conn, data, addr):
                 else:
                     break
 
-
-
-
             except Exception as err:
                 print(err)
                 conn.send(reply)
 
-                # break
+                break
 
         forward_socket.close()
         conn.close()
@@ -153,6 +170,23 @@ def forwardRequests(webserver, port, conn, data, addr):
         forward_socket.close()
         conn.close()
         sys.exit()
+
+def check_websites_blacklist(url, json_file):
+    """
+    Check if URL is blacklisted
+    :returns: Boolean
+    """
+    main_path = os.path.dirname(__file__)
+    json_path = os.path.join(main_path, json_file)
+    json_open = open(json_path)
+    json_data = json.load(json_open)
+
+    for site in json_data["Blacklisted_sites"]:
+        if site == url:
+            return True
+
+    return False
+
 
 def modify_HTTP_response(reply, json_file):
     """
