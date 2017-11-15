@@ -11,7 +11,7 @@ from pprint import pprint
 from _thread import *
 
 
-maximum_concurrent_connections = 5 # Maximum number of concurrent conncetions held by the server
+maximum_concurrent_connections = 5 # Maximum number of concurrent connections held by the server
 buffersize = 8192                  # Socket Buffer max size
 
 # Get the port number you wish to listen on, manually input by the user
