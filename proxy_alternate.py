@@ -5,14 +5,13 @@ import sys
 import socket
 import requests
 import json
-import re
-import ssl
+import time
 from pprint import pprint
 from _thread import *
 
 
 maximum_concurrent_connections = 5 # Maximum number of concurrent conncetions held by the server
-buffersize = 8192                  # Socket Buffer max size
+buffersize = 4096                  # Socket Buffer max size
 
 # Get the port number you wish to listen on, manually input by the user
 try:
@@ -58,12 +57,11 @@ def handleConnections(conn, data, addr):
     # Request from user (connected to Proxy) will be processed in this function
     try:
         # print(data
-        print("addr: ", addr)
         print("splitting...")
         site_data = data.decode("utf-8", "ignore").split('\n')[0]
         print("site_data: ", site_data)
         url = site_data.split(' ')[1]
-        print(url)
+        print("url: ",url)
         # Find the position of the ://
         http_position = url.find("://")
 
@@ -93,7 +91,35 @@ def handleConnections(conn, data, addr):
             port = int((temp[(port_position+1)])[:webserver_position-port_position-1])
             webserver = temp[:port_position]
 
-        forwardRequests(webserver, port, conn, data, addr)
+        # forwardRequests(webserver, port, conn, data, addr)
+
+        if("http://" not in url):
+            url = "https://" + url
+            print("updated url:", url)
+
+        # MAX_RETRIES = 20
+        #
+        # session = requests.Session()
+        # adapter = requests.adapters.HTTPAdapter(max_retries=MAX_RETRIES)
+        # session.mount('https://', adapter)
+        # session.mount('http://', adapter)
+
+        # while True:
+        #
+        #     try:
+        #         r = session.get(url, headers={'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/55.0.2883.75 Safari/537.36'})
+        #
+        #     except Exception as err:
+        #         print("Connection refused by server")
+        #         print(err)
+        #         time.sleep(1)
+        #         continue
+
+        r = requests.get(url)
+
+        print(r.text)
+
+        conn.send(r.text.encode('utf-8'))
 
 
 
@@ -110,7 +136,6 @@ def forwardRequests(webserver, port, conn, data, addr):
         while True:
             # receive reply from end target (webserver)
             reply = forward_socket.recv(buffersize)
-
 
             try:
                 reply_as_string = str(reply,'utf-8')
@@ -136,14 +161,11 @@ def forwardRequests(webserver, port, conn, data, addr):
                 else:
                     break
 
-
-
-
             except Exception as err:
                 print(err)
                 conn.send(reply)
 
-                # break
+                break
 
         forward_socket.close()
         conn.close()
