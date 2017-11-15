@@ -6,6 +6,7 @@ import socket
 import requests
 import re
 import json
+from bs4 import BeautifulSoup
 from _thread import *
 
 
@@ -152,30 +153,15 @@ def modify_HTTP_response(reply, json_file):
     json_open = open(json_path)
     json_data = json.load(json_open)
 
+    soup = BeautifulSoup(reply, 'html.parser')
 
-    if('<!DOCTYPE html>' in reply):
-        #Check for the end of header, ensure that the header doesn't get modify, only the HTML section
-        reply_list = re.split('(<!DOCTYPE html>)', reply)
+    for word in json_data["Wordlist"]:
+        new_word = json_data["Wordlist"].get(word)
+        target = soup.find_all(text=re.compile(r"" + word))
+        for v in target:
+            v.replace_with(v.replace(word, new_word))
 
-        # print('reply list: ', reply_list)
-
-        for word in json_data['Wordlist']:
-            new_word = json_data['Wordlist'].get(word)
-
-            reply_list[2] = reply_list[2].replace(word, new_word)
-
-        reply = ' '.join(reply_list)
-
-    else:
-        #Assume that this is part of the HTML and not a header
-
-        # print('reply else:', reply)
-
-        for word in json_data['Wordlist']:
-            new_word = json_data['Wordlist'].get(word)
-
-            reply = reply.replace(word, new_word)
-
+    reply = soup
 
     return reply
 
