@@ -152,8 +152,9 @@ def modify_HTTP_response(reply, json_file):
     json_open = open(json_path)
     json_data = json.load(json_open)
 
-    #Check for the end of header, ensure that the header doesn't get modify, only the HTML section
+
     if('<!DOCTYPE html>' in reply):
+        #Check for the end of header, ensure that the header doesn't get modify, only the HTML section
         reply_list = re.split('(<!DOCTYPE html>)', reply)
 
         # print('reply list: ', reply_list)
@@ -166,6 +167,7 @@ def modify_HTTP_response(reply, json_file):
         reply = ' '.join(reply_list)
 
     else:
+        #Assume that this is part of the HTML and not a header
 
         # print('reply else:', reply)
 
