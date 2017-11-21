@@ -8,6 +8,7 @@
 
 from PyQt4 import QtCore, QtGui
 import sys
+import json
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
@@ -154,14 +155,11 @@ class Ui_Dialog(QtGui.QWidget):
 		getSites = self.blacklisted_sites_editfield.text()
 		self.blacklisted_sites_editfield.clear() #clear the linefield after every addition
 		self.blacklisted_sites_list.addItem(getSites) #add Item to the listviewwidget
-		print getSites #TODO: add this to the listview and parse it to JSON code
-		#create a list of JSON?
 
 
 	def remove_blacklisted_sites(self):
 		for SelectedItem in self.blacklisted_sites_list.selectedItems():
 			self.blacklisted_sites_list.takeItem(self.blacklisted_sites_list.row(SelectedItem))
-			#TODO: remove that item in the list for JSON
 
 	def add_strings_to_modify(self):
 		getFirstStrings= self.strings_to_modify_editfield.text()
@@ -190,7 +188,23 @@ class Ui_Dialog(QtGui.QWidget):
 		self.strings_modified_list.clear()
 
 	def apply_all(self):
-		print "I'm gonna make all the content a list and parse it to JSON"
+		wordlist_dict = {}
+		i=0
+		while i< self.strings_to_modify_list.count():
+			item = self.strings_to_modify_list.item(i)
+			paireditem = self.strings_modified_list.item(i)
+			i+=1
+			wordlist_dict[str(item.text())] = str(paireditem.text())
+
+		blacklisted_dict = {}
+		for index in xrange(self.blacklisted_sites_list.count()):
+			blacklisted_dict[str(self.blacklisted_sites_list.item(index).text())] = ""
+			print self.blacklisted_sites_list.item(index).text()
+		
+		with open('prefs.json','w') as f:
+			f.write(json.dumps({'Wordlist': wordlist_dict, 'Blacklisted_sites':blacklisted_dict}))
+			f.close()
+
 if __name__ == '__main__':
 	app = QtGui.QApplication(sys.argv)
 	ex = Ui_Dialog()
