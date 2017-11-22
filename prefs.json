@@ -1,12 +1,1 @@
-{
-  "Wordlist" : {
-    "summer-cool" : "ice-cold",
-    "blistered" : "bruised",
-    "blacksmith" : "whitesmith",
-    "python" : "snake"
-  },
-
-  "Blacklisted_sites" : {
-    "http://httpbin.org/headers":""
-  }
-}
+{"Wordlist": {"summer-cool": "ice-cold", "blistered": "bruised", "blacksmith": "whitesmith", "python": "snake", "test": "TEST"}, "Blacklisted_sites": {"http://httpbin.org/headers": "", "http://www.google.com": ""}}

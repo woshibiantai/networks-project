@@ -10,6 +10,8 @@ from PyQt5 import QtCore, QtGui
 from PyQt5.QtWidgets import *
 import sys
 import json
+import os
+os.environ["QT_SCALE_FACTOR"] = "1.5"
 
 try:
     _fromUtf8 = QtCore.QString.fromUtf8
@@ -141,6 +143,18 @@ class Ui_Dialog(QWidget):
 		self.remove_strings_to_modify_btn.setText(_translate("Dialog", "-", None))
 		self.add_strings_to_modify_btn.setText(_translate("Dialog", "+", None))
 		self.label.setText(_translate("Dialog", "to", None))
+
+        #openthefile
+		existingJson = open('prefs.json')
+		data = json.load(existingJson)
+		existing_word_pair= data['Wordlist']
+		for key,value in existing_word_pair.items():
+			self.strings_to_modify_list.addItem(key)
+			self.strings_modified_list.addItem(value)
+
+		existing_blacklisted_sites= data['Blacklisted_sites']
+		for getSites in existing_blacklisted_sites:
+			self.blacklisted_sites_list.addItem(getSites)
 
 		self.add_blacklisted_sites_btn.clicked.connect(self.add_blacklisted_sites)
 		self.remove_blacklisted_sites_btn.clicked.connect(self.remove_blacklisted_sites)
